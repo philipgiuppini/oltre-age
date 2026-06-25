@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useCallback, useEffect, useMemo, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { DB, Account, BancaItem, Role, Fascia, DocFile } from "@/lib/store";
@@ -41,13 +41,12 @@ const Ctx = createContext<AppContextValue | null>(null);
 const EMPTY: DB = { users: [], apartments: [], banca: [] };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const supabaseRef = useRef<SupabaseClient | null>(null);
-  if (supabaseRef.current === null) supabaseRef.current = createClient();
-  const supabase = supabaseRef.current;
+  const [supabase] = useState<SupabaseClient | null>(() => createClient());
 
   const [db, setDb] = useState<DB>(EMPTY);
   const [userId, setUserId] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  // se Supabase non è configurato, consideriamo subito caricato (demo mode)
+  const [loaded, setLoaded] = useState<boolean>(() => supabase === null);
 
   const fetchData = useCallback(async (uid: string | null) => {
     if (!supabase || !uid) {
@@ -86,10 +85,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refetch = useCallback(() => fetchData(userId), [fetchData, userId]);
 
   useEffect(() => {
-    if (!supabase) {
-      setLoaded(true);
-      return;
-    }
+    if (!supabase) return; // demo mode: loaded già true
     let active = true;
     supabase.auth.getSession().then(async ({ data }) => {
       const uid = data.session?.user.id ?? null;

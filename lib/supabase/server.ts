@@ -1,5 +1,8 @@
 // Supabase per Server Components / Route Handlers (App Router).
+// NB: questo modulo è importato SOLO da codice server (route handlers),
+// mai da componenti client → l'import di supabase-js non finisce nel bundle browser.
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createSb } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 export async function createClient() {
@@ -29,7 +32,5 @@ export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const svc = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !svc) return null;
-  // import dinamico per non includerlo mai nel bundle client
-  const { createClient: createSb } = require("@supabase/supabase-js");
   return createSb(url, svc, { auth: { autoRefreshToken: false, persistSession: false } });
 }
